@@ -22,6 +22,8 @@ class User(db.Entity):
 
     in_channels = Set("Channel", reverse="members")
 
+    messages = Set("Message", reverse="user")
+
 
 class Channel(db.Entity):
     id = PrimaryKey(str)
@@ -34,5 +36,22 @@ class Channel(db.Entity):
     purpose_text = Optional(str)
 
     members = Set("User")
+
+    messages = Set("Message", reverse="channel")
+
+
+class Message(db.Entity):
+    type = Required(str)
+    timestamp = Required(datetime)
+    # Some bots have text in attachments
+    text = Optional(str)
+
+    user = Optional(User)
+    bot_id = Optional(str, nullable=True)
+    subtype = Optional(str)
+
+    upload = Required(bool, default=False)
+
+    channel = Required(Channel)
 
 db.generate_mapping(create_tables=True)
