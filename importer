@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+import argparse
 import json
 from datetime import datetime
 from glob import glob
 import os.path
 
-from pony.orm import db_session, commit
-from pony.orm.dbapiprovider import IntegrityError
+from pony.orm import db_session
 
 import models
 
@@ -27,7 +28,7 @@ def import_user(u):
 
     models.User(**user)
 
-def import_users(filepath):
+def users(filepath):
     f = open(filepath)
     users = json.load(f)
     f.close()
@@ -58,7 +59,7 @@ def import_channel(c):
         dchan.members.add(u)
 
 
-def import_channels(filepath):
+def channels(filepath):
     f = open(filepath)
     channels = json.load(f)
     f.close()
@@ -90,7 +91,7 @@ def import_message(channel_name, m):
 
     models.Message(**msg)
 
-def import_messages_channel(filepath):
+def messages_channel(filepath):
     f = open(filepath)
     messages = json.load(f)
     f.close()
@@ -106,18 +107,40 @@ def import_messages_channel(filepath):
     imported = len(messages) - nonunique_skipped
     print("Imported {} messages from channel {}".format(imported, channel_name))
 
-def import_messages(ddir):
+def messages(ddir):
     for f in glob(os.path.join(ddir, "*.json")):
-        import_messages_channel(f)
+        messages_channel(f)
+
 
 @db_session
-def import_all():
-    import_users("./data/users.json")
-    import_channels("./data/channels.json")
-    import_messages("./data/logs")
-
 def main():
-    import_all()
+    parser = argparse.ArgumentParser(
+        description="Import Slack data from slack-exporter directory",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "--data",
+        type=str,
+        metavar="DATADIR",
+        default="./data",
+        help="Data directory where slack-exporter saved channel, user and message JSON data")
+
+    parser.add_argument("--users", action="store_true")
+    parser.add_argument("--channels", action="store_true")
+    parser.add_argument("--messages", action="store_true")
+
+    args = parser.parse_args()
+    if not any([args.users, args.channels, args.messages]):
+        users(os.path.join(args.data, "users.json"))
+        channels(os.path.join(args.data, "channels.json"))
+        messages(os.path.join(args.data, "logs"))
+    else:
+        if args.users:
+            users(os.path.join(args.data, "users.json"))
+        if args.channels:
+            channels(os.path.join(args.data, "channels.json"))
+        if args.messages:
+            messages(os.path.join(args.data, "logs"))
 
 if __name__ == "__main__":
     main()

@@ -3,7 +3,6 @@ from datetime import datetime
 from pony.orm import *
 
 db = Database()
-db.bind("sqlite", "slack.sqlite3", create_db=True)
 
 class User(db.Entity):
     id = PrimaryKey(str)
@@ -53,5 +52,3 @@ class Message(db.Entity):
     upload = Required(bool, default=False)
 
     channel = Required(Channel)
-
-db.generate_mapping(create_tables=True)
